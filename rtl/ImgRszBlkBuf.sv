@@ -10,8 +10,8 @@ module ImgRszBlkBuf
     input   logic                                   PxlVld_d1,
     output  logic                                   PxlRdy_d1,
     // Processed Image information
-    output  logic       [IMG_WIDTH_IDX_W-1:0]       ProcImgWidth,   // Processed Image's width
-    output  logic       [IMG_HEIGHT_IDX_W-1:0]      ProcImgHeight,  // Processed Image's height
+    input   logic       [IMG_WIDTH_IDX_W-1:0]       ProcImgWidth,   // Processed Image's width
+    input   logic       [IMG_HEIGHT_IDX_W-1:0]      ProcImgHeight,  // Processed Image's height
     // Block Compute Serialization 
     output  logic       [RSZ_IMG_WIDTH_SIZE-1:0]    BlkIsEnough     [RSZ_IMG_HEIGHT_SIZE-1:0],  // The block collected all corresponding pixels
     output  FcBlkVal_t                              CompBlkData,    // Computed Block data
@@ -32,7 +32,7 @@ module ImgRszBlkBuf
     input   logic       [RSZ_IMG_HEIGHT_SIZE-1:0]   FlushBlkYMsk,   // Used to flush the block executed flag (Y position of the interest block)
     input   logic                                   FlushVld,
     // Common use
-    output  FcBlkVal_t  [RSZ_IMG_HEIGHT_SIZE-1:0]   [RSZ_IMG_WIDTH_SIZE-1:0]  FcBlkVal    // Full Color Block accumulated value
+    output  FcBlkBuf_t                              FcBlkBuf    // Full Color Block accumulated value
     );
     genvar c, x, y;
 
@@ -81,7 +81,7 @@ generate
             assign BlkOffsetHor[x]  = BlkBaseAddrHor[x] + (ProcImgWidth >> RSZ_IMG_WIDTH_IDX_W); // u*X/U + X/U
         end
         else begin
-            $display("[WARN]: The RSZ_IMG_WIDTH_SIZE is not a power-of-2");
+            $warning("[WARN]: The RSZ_IMG_WIDTH_SIZE is not a power-of-2");
         end
         assign PxlInBlkHor[x]       = (PxlX_d1 >= BlkBaseAddrHor[x]) & (PxlX_d1 <= BlkOffsetHor[x]); // u*X/U <= x <= u*X/U + X/U
     end
@@ -91,7 +91,7 @@ generate
             assign BlkOffsetVer[y]  = BlkBaseAddrVer[y] + (ProcImgHeight >> RSZ_IMG_HEIGHT_IDX_W); // v*Y/V + Y/V
         end
         else begin
-            $display("[WARN]: The RSZ_IMG_HEIGHT_SIZE is not a power-of-2");
+            $warning("[WARN]: The RSZ_IMG_HEIGHT_SIZE is not a power-of-2");
         end
         assign PxlInBlkVer[y]       = (PxlY_d1 >= BlkBaseAddrVer[y]) & (PxlY_d1 <= BlkOffsetVer[y]); // v*Y/V <= y <= v*Y/V + Y/V
     end
@@ -106,21 +106,21 @@ generate
                 if(RSZ_ALGORITHM == "AVR-POOLING") begin
                     always_ff @(posedge Clk) begin
                         if(Reset) begin
-                            FcBlkVal[y][x][c] <= '0;
+                            FcBlkBuf[c][y][x] <= '0;
                         end
                         else begin
                             unique casez ({(PxlVld_d1 & PxlInBlkHor[x] & PxlInBlkVer[y]), (CeCompVld & CeRszPxlXMsk[x] & CeRszPxlYMsk[y])})
-                                2'10: begin // The coming pixel is in the current block
-                                    FcBlkVal[y][x][c] <= FcBlkVal[y][x][c] + PxlData_d1[c];    
+                                2'b10: begin // The coming pixel is in the current block
+                                    FcBlkBuf[c][y][x] <= FcBlkBuf[c][y][x] + PxlData_d1[c];    
                                 end 
                                 2'b01: begin // The Compute Engine just completed computing resized value for the current block
-                                    FcBlkVal[y][x][c] <= {{(BLK_SUM_MAX_W-PXL_PRIM_COLOR_W){1'b0}}, CeRszPxlData[c]};
+                                    FcBlkBuf[c][y][x] <= {{(BLK_SUM_MAX_W-PXL_PRIM_COLOR_W){1'b0}}, CeRszPxlData[c]};
                                 end
                                 2'b00: begin
-                                    FcBlkVal[y][x][c] <= FcBlkVal[y][x][c];
+                                    FcBlkBuf[c][y][x] <= FcBlkBuf[c][y][x];
                                 end
                                 default: begin
-                                    FcBlkVal[y][x][c] <= FcBlkVal[y][x][c];
+                                    FcBlkBuf[c][y][x] <= 'x;
                                 end
                             endcase
                         end
@@ -129,10 +129,10 @@ generate
                 else if(RSZ_ALGORITHM == "MAX-POOLING") begin
                     always_ff @(posedge Clk) begin
                         if(Reset) begin
-                            FcBlkVal[y][x][c] <= '0;
+                            FcBlkBuf[c][y][x] <= '0;
                         end
                         else if (PxlInBlkHor[x] & PxlInBlkVer[y]) begin
-                            FcBlkVal[y][x][c] <= (FcBlkVal[y][x][c] < PxlData_d1[c]) ? PxlData_d1[c] : FcBlkVal[y][x][c];
+                            FcBlkBuf[c][y][x] <= (FcBlkBuf[c][y][x] < PxlData_d1[c]) ? PxlData_d1[c] : FcBlkBuf[c][y][x];
                         end
                     end
                 end
@@ -197,11 +197,11 @@ generate
     for (c = 0; c < PXL_PRIM_COLOR_NUM; c++) begin  : Gen_ColorCompMap
         // Map a corresponding buffer to Compute Engine
         OnehotMux2D #(
-            .DATA_TYPE  (FcBlkVal_t),
+            .DATA_TYPE  (BlkVal_t),
             .SEL_X_NUM  (RSZ_IMG_WIDTH_SIZE),
             .SEL_Y_NUM  (RSZ_IMG_HEIGHT_SIZE)
         ) CompBlkSel (
-            .DataIn     (FcBlkVal[c]),
+            .DataIn     (FcBlkBuf[c]),
             .SelX       (CompBlkXMsk),
             .SelY       (CompBlkYMsk),
             .DataOut    (CompBlkData[c])
@@ -211,8 +211,8 @@ generate
             .DATA_TYPE  (RszPxlData_t),
             .SEL_X_NUM  (RSZ_IMG_WIDTH_SIZE),
             .SEL_Y_NUM  (RSZ_IMG_HEIGHT_SIZE)
-        ) CompBlkSel (
-            .DataIn     (RszPxlData_t'(FcBlkVal[c])), // Never overflow
+        ) FlushBlkSel (
+            .DataIn     (RszPxlBuf_t'(FcBlkBuf[c])), // Never overflow
             .SelX       (FlushBlkXMsk),
             .SelY       (FlushBlkYMsk),
             .DataOut    (FlushRszPxlData[c])

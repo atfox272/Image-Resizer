@@ -69,7 +69,7 @@ generate
         assign BlkSzVer         = ProcImgHeight[IMG_HEIGHT_IDX_W-1-:BLK_HEIGHT_MAX_SZ_W]; // = ProcImgHeight / ResizedImgHeight
     end
     else begin
-        $display("[WARN]: The resized width or height is not a power-of-2");
+        $warning("[WARN]: The resized width or height is not a power-of-2");
         /* 
         TODO: Find a solution to handle the case where the resized width or height is not power-of-2
         -> Use lookup table for division operator
@@ -178,7 +178,7 @@ generate
                 end
             end
         end
-        assign RszImgComp = RszPxlHsk &
+        assign RszImgComp = FwdRszEn &
                             (PopPxlCntHor == (ProcImgWidth - 1'b1)) &
                             (PopPxlCntVer == (ProcImgHeight - 1'b1)); // Last resized pixel is sent
     end

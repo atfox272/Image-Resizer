@@ -9,7 +9,7 @@ module ImgRszFwd
     input   logic                               RszPxlRdy,
     // Resized Pixel Forwarder
     input   logic    [RSZ_IMG_WIDTH_SIZE-1:0]   BlkIsExec       [RSZ_IMG_HEIGHT_SIZE-1:0],  // Block is executed by Compute Engine 
-    output  FcRszPxlData_t                      FlushRszPxlData,// Flushed Resized Pixel data
+    input   FcRszPxlData_t                      FlushRszPxlData,// Flushed Resized Pixel data
     output  logic    [RSZ_IMG_WIDTH_SIZE-1:0]   FlushBlkXMsk,   // Used to flush the block executed flag (X position of the interest block)
     output  logic    [RSZ_IMG_HEIGHT_SIZE-1:0]  FlushBlkYMsk,   // Used to flush the block executed flag (Y position of the interest block)
     output  logic                               FlushVld,

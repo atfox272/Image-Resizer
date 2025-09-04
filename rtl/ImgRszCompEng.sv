@@ -9,13 +9,13 @@ module ImgRszCompEng
     input   logic   [BLK_WIDTH_MAX_SZ_W-1:0]    BlkSzHor,       // Horizontal Block Size
     input   logic   [BLK_HEIGHT_MAX_SZ_W-1:0]   BlkSzVer,       // Vertical Block Size
     // Prev pipeline stage: Gather the pixels
-    output  FcBlkVal_t                          CompBlkData,    // Computed Block data
+    input   FcBlkVal_t                          CompBlkData,    // Computed Block data
     input   logic   [RSZ_IMG_WIDTH_SIZE-1:0]    CompBlkXMsk,    // Used to flush the block counter (X position of the interest block)
     input   logic   [RSZ_IMG_HEIGHT_SIZE-1:0]   CompBlkYMsk,    // Used to flush the block counter (Y position of the interest block)
     input   logic                               CompBlkVld,     // Request to compute a block
     output  logic                               CompBlkRdy,     // Computing Block is ready
     // Next pipeline stage: Buffer resized pixel
-    input   FcRszPxlData_t                      CeRszPxlData,   // Resized pixel data from Compute Engine
+    output  FcRszPxlData_t                      CeRszPxlData,   // Resized pixel data from Compute Engine
     output  logic   [RSZ_IMG_WIDTH_SIZE-1:0]    CeRszPxlXMsk,   
     output  logic   [RSZ_IMG_HEIGHT_SIZE-1:0]   CeRszPxlYMsk,
     output  logic                               CeCompVld,      // The Payload of Compute Engine is valid
@@ -53,7 +53,7 @@ module ImgRszCompEng
                     CalcBlkSzSt <= ACC;
                 end
                 ACC: begin
-                    ProcBlkSz <= ProcBlkSz + BlkSzHor
+                    ProcBlkSz <= ProcBlkSz + BlkSzHor;
                     AccTime   <= AccTime + 1'b1;
                     if(AccTime == (BlkSzVer-1'b1)) begin
                         CalcBlkSzSt <= DONE;

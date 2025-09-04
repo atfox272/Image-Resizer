@@ -13,14 +13,14 @@ module ImgRsz
     input                                           PxlVld,
     output                                          PxlRdy,
     // Resized Pixel
-    output  logic        [PXL_PRIM_COLOR_W-1:0]     RszPxlData  [PXL_PRIM_COLOR_NUM-1:0],
+    output  FcRszPxlData_t                          RszPxlData,
     output  logic        [RSZ_IMG_WIDTH_IDX_W-1:0]  RszPxlX,
     output  logic        [RSZ_IMG_HEIGHT_IDX_W-1:0] RszPxlY,
     output  logic                                   RszPxlVld,
     input   logic                                   RszPxlRdy,
     // Optional
-    output  FcRszPxlData_t  [RSZ_IMG_HEIGHT_SIZE-1:0]  [RSZ_IMG_WIDTH_SIZE-1:0]  FcRszPxlParData,// Block accumulated value
-    output  logic           [RSZ_IMG_HEIGHT_SIZE-1:0]  [RSZ_IMG_WIDTH_SIZE-1:0]  RszPxlParVld  // Block is executed by Compute Engine
+    output  FcRszPxlBuf_t                           FcRszPxlBuf, // Block accumulated value
+    output  logic       [RSZ_IMG_HEIGHT_SIZE-1:0]  [RSZ_IMG_WIDTH_SIZE-1:0]  RszPxlParVld  // Block is executed by Compute Engine
     );
 
     // Image Capture <-> Block Buffer
@@ -64,12 +64,12 @@ module ImgRsz
     logic    [RSZ_IMG_HEIGHT_SIZE-1:0]  FlushBlkYMsk;   // Used to flush the block executed flag (Y position of the interest block)
     logic                               FlushVld;
     // Common use
-    FcBlkVal_t [RSZ_IMG_HEIGHT_SIZE-1:0] [RSZ_IMG_WIDTH_SIZE-1:0]  FcBlkVal;    // Block accumulated value
+    FcBlkBuf_t                          FcBlkBuf;    // Block accumulated value
     
     for(genvar y = 0; y < RSZ_IMG_HEIGHT_SIZE; y++) begin           : Gen_MapY
         for(genvar x = 0; x < RSZ_IMG_WIDTH_SIZE; x++) begin        : Gen_MapX
             for (genvar c = 0; c < PXL_PRIM_COLOR_NUM; c++) begin   : Gen_MapColor
-                assign FcRszPxlParData[y][x][c] = RszPxlData_t'(FcBlkVal[y][x][c]);
+                assign FcRszPxlBuf[c][y][x]          = RszPxlData_t'(FcBlkBuf[c][y][x]);
             end
             assign RszPxlParVld[y][x]   = BlkIsExec[y][x];
         end
@@ -126,7 +126,7 @@ module ImgRsz
         .FlushBlkXMsk   (FlushBlkXMsk),
         .FlushBlkYMsk   (FlushBlkYMsk),
         .FlushVld       (FlushVld),
-        .FcBlkVal       (FcBlkVal)
+        .FcBlkBuf       (FcBlkBuf)
     );
 
     ImgRszBlkCompSer Bcs (
