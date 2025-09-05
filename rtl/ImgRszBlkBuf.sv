@@ -75,25 +75,25 @@ module ImgRszBlkBuf
     );
     // Note: Use MulSeq module to share resources (shared Adder) across successive elements in sequence -> Do not remove it
 generate
-    for (x = 0; x < BLK_WIDTH_MAX_SZ_W; x++) begin  : Gen_BlkHorInCond
+    for (x = 0; x < RSZ_IMG_WIDTH_SIZE; x++) begin  : Gen_BlkHorInCond
         if((RSZ_IMG_WIDTH_SIZE  & (RSZ_IMG_WIDTH_SIZE-1))  == 0) begin  // RSZ_IMG_WIDTH_SIZE is a power-of-2
             assign BlkBaseAddrHor[x]= uTimeXSeq[x] >> RSZ_IMG_WIDTH_IDX_W; // u*X/U (U is 2**RSZ_IMG_WIDTH_IDX_W)
-            assign BlkOffsetHor[x]  = BlkBaseAddrHor[x] + (ProcImgWidth >> RSZ_IMG_WIDTH_IDX_W); // u*X/U + X/U
+            assign BlkOffsetHor[x]  = BlkBaseAddrHor[x] + ((ProcImgWidth >> RSZ_IMG_WIDTH_IDX_W) + |ProcImgWidth[RSZ_IMG_WIDTH_IDX_W-1:0]); // u*X/U + ceil(X/U)
         end
         else begin
             $warning("[WARN]: The RSZ_IMG_WIDTH_SIZE is not a power-of-2");
         end
-        assign PxlInBlkHor[x]       = (PxlX_d1 >= BlkBaseAddrHor[x]) & (PxlX_d1 <= BlkOffsetHor[x]); // u*X/U <= x <= u*X/U + X/U
+        assign PxlInBlkHor[x]       = (PxlX_d1 >= BlkBaseAddrHor[x]) & (PxlX_d1 < BlkOffsetHor[x]); // u*X/U <= x < u*X/U + ceil(X/U)
     end
-    for (y = 0; y < BLK_HEIGHT_MAX_SZ_W; y++) begin : Gen_BlkVerInCond
+    for (y = 0; y < RSZ_IMG_HEIGHT_SIZE; y++) begin : Gen_BlkVerInCond
         if((RSZ_IMG_HEIGHT_SIZE & (RSZ_IMG_HEIGHT_SIZE-1)) == 0) begin  // RSZ_IMG_HEIGHT_SIZE is a power-of-2
             assign BlkBaseAddrVer[y]= vTimeYSeq[y] >> RSZ_IMG_HEIGHT_IDX_W; // v*Y/V (V is 2**RSZ_IMG_HEIGHT_IDX_W)
-            assign BlkOffsetVer[y]  = BlkBaseAddrVer[y] + (ProcImgHeight >> RSZ_IMG_HEIGHT_IDX_W); // v*Y/V + Y/V
+            assign BlkOffsetVer[y]  = BlkBaseAddrVer[y] + ((ProcImgHeight >> RSZ_IMG_HEIGHT_IDX_W) + |ProcImgHeight[RSZ_IMG_HEIGHT_IDX_W-1:0]); // v*Y/V + ceil(Y/V)
         end
         else begin
             $warning("[WARN]: The RSZ_IMG_HEIGHT_SIZE is not a power-of-2");
         end
-        assign PxlInBlkVer[y]       = (PxlY_d1 >= BlkBaseAddrVer[y]) & (PxlY_d1 <= BlkOffsetVer[y]); // v*Y/V <= y <= v*Y/V + Y/V
+        assign PxlInBlkVer[y]       = (PxlY_d1 >= BlkBaseAddrVer[y]) & (PxlY_d1 < BlkOffsetVer[y]); // v*Y/V <= y < v*Y/V + ceil(Y/V)
     end
 endgenerate   
     

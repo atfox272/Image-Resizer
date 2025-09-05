@@ -7,8 +7,8 @@ package ImgRszPkg;
 
     // Resized Image configuration
     parameter RSZ_ALGORITHM         = "AVR-POOLING";    // Resizing Type: "AVR-POOLING" || "MAX-POOLING"
-    parameter RSZ_IMG_WIDTH_SIZE    = 32;
-    parameter RSZ_IMG_HEIGHT_SIZE   = 16;
+    parameter RSZ_IMG_WIDTH_SIZE    = 8;
+    parameter RSZ_IMG_HEIGHT_SIZE   = 8;
     parameter RSZ_IMG_WIDTH_IDX_W   = $clog2(RSZ_IMG_WIDTH_SIZE);
     parameter RSZ_IMG_HEIGHT_IDX_W  = $clog2(RSZ_IMG_HEIGHT_SIZE);
 

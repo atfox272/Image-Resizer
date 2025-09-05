@@ -32,7 +32,7 @@ generate
             .OutX       (FlushBlkXMsk),
             .OutY       (FlushBlkYMsk)
         );
-        assign RszPxlVld    = |FlushBlkYMsk & RszPxlRdy;
+        assign RszPxlVld    = |FlushBlkYMsk;
     end
     else if(RSZ_PXL_FWD_SER == 0) begin : Gen_ParallelFwd
         // Clear all buffer values when all block is valid

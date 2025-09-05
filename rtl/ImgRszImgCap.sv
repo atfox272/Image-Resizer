@@ -58,8 +58,8 @@ module ImgRszImgCap
     // Handshake control
     assign PxlRdy           = (PxlInfoRdy & &PxlPayldRdy) & ~CapEntImg; // All FIFOs are ready to be pushed and the all pixels in 1 image has not captured yet
     assign ConvPxlVld       = PxlVld & PxlRdy; 
-    assign ConvPxlRdy_d1    = PxlRdy_d1 & (PxlInfoVld_d1 & &PxlPayldVld_d1); // All FIFOs are ready to be popped
-
+    assign PxlVld_d1        = PxlInfoVld_d1 & &PxlPayldVld_d1;
+    assign ConvPxlRdy_d1    = PxlRdy_d1 & PxlVld_d1; // All FIFOs are ready to be popped
     // Block calculation
 generate
     if( ((RSZ_IMG_WIDTH_SIZE  & (RSZ_IMG_WIDTH_SIZE-1))  == 0) &      // Resized width is power-of-2

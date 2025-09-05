@@ -50,7 +50,7 @@ module ImgRszCompEng
                 IDLE: begin
                     ProcBlkSz   <= '0;
                     AccTime     <= '0;
-                    CalcBlkSzSt <= ACC;
+                    CalcBlkSzSt <= (IsFstPxl & PxlCap) ? ACC : CalcBlkSzSt;
                 end
                 ACC: begin
                     ProcBlkSz <= ProcBlkSz + BlkSzHor;
