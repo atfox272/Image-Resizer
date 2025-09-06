@@ -68,7 +68,9 @@ module ImgRszCompEng
                     end
                 end
                 default: begin
-                    
+                    ProcBlkSz   <= 'x;
+                    AccTime     <= 'x;
+                    CalcBlkSzSt <= 'x;
                 end
             endcase
         end

@@ -147,6 +147,7 @@ module ImgRszCegDiv #(
          Div_s       : {BwRdy, OprandEn, StillDiv, DigitCounterEn, DigitCounterClr, QuotientMemEn, QuotientMemClr, FwVld} = 8'b0001_0100;
          DivStill_s  : {BwRdy, OprandEn, StillDiv, DigitCounterEn, DigitCounterClr, QuotientMemEn, QuotientMemClr, FwVld} = 8'b0011_0100;
          DivDone_s   : {BwRdy, OprandEn, StillDiv, DigitCounterEn, DigitCounterClr, QuotientMemEn, QuotientMemClr, FwVld} = 8'b0000_0001; //00x0_x001
+         default     : {BwRdy, OprandEn, StillDiv, DigitCounterEn, DigitCounterClr, QuotientMemEn, QuotientMemClr, FwVld} = 8'b1100_1010;
       endcase
    end
 

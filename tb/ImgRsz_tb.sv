@@ -11,8 +11,8 @@ module ImgRsz_tb;
     localparam PXL_ST_O_STALL_MIN   = 0;
     localparam PXL_ST_O_STALL_MAX   = 2;
 
-    localparam DT_IMG_WIDTH  = 128;
-    localparam DT_IMG_HEIGHT = 64;
+    localparam DT_IMG_WIDTH  = 129;
+    localparam DT_IMG_HEIGHT = 65;
     
     logic                                   Clk;
     logic                                   Reset;
@@ -29,7 +29,7 @@ module ImgRsz_tb;
     logic                                   RszPxlVld;
     logic                                   RszPxlRdy;
     FcRszPxlBuf_t                           FcRszPxlBuf; // Block accumulated value
-    logic           [RSZ_IMG_HEIGHT_SIZE-1:0]  [RSZ_IMG_WIDTH_SIZE-1:0]  RszPxlParVld;  // Block is executed by Compute Engine
+    logic       [RSZ_IMG_HEIGHT_SIZE-1:0]   [RSZ_IMG_WIDTH_SIZE-1:0]  RszPxlParVld;  // Block is executed by Compute Engine
     
     ImgRsz dut (.*);
 

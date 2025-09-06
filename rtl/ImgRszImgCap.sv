@@ -65,8 +65,8 @@ generate
     if( ((RSZ_IMG_WIDTH_SIZE  & (RSZ_IMG_WIDTH_SIZE-1))  == 0) &      // Resized width is power-of-2
         ((RSZ_IMG_HEIGHT_SIZE & (RSZ_IMG_HEIGHT_SIZE-1)) == 0)) begin // Resized height is power-of-2
         
-        assign BlkSzHor         = ProcImgWidth[IMG_WIDTH_IDX_W-1-:BLK_WIDTH_MAX_SZ_W];    // = ProcImgWidth / ResizedImgWidth
-        assign BlkSzVer         = ProcImgHeight[IMG_HEIGHT_IDX_W-1-:BLK_HEIGHT_MAX_SZ_W]; // = ProcImgHeight / ResizedImgHeight
+        assign BlkSzHor         = ProcImgWidth[IMG_WIDTH_IDX_W-1-:BLK_WIDTH_MAX_SZ_W] + |ProcImgWidth[BLK_WIDTH_MAX_SZ_W-1:0];    // = ceilt(ProcImgWidth / ResizedImgWidth)
+        assign BlkSzVer         = ProcImgHeight[IMG_HEIGHT_IDX_W-1-:BLK_HEIGHT_MAX_SZ_W] + |ProcImgHeight[BLK_HEIGHT_MAX_SZ_W-1:0]; // = ceil(ProcImgHeight / ResizedImgHeight)
     end
     else begin
         $warning("[WARN]: The resized width or height is not a power-of-2");
