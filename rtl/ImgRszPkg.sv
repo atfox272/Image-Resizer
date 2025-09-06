@@ -25,6 +25,9 @@ package ImgRszPkg;
     parameter BLK_MAX_SZ_W          = BLK_WIDTH_MAX_SZ_W + BLK_HEIGHT_MAX_SZ_W;  
     parameter BLK_SUM_MAX_W         = PXL_PRIM_COLOR_W + BLK_MAX_SZ_W;          // From Prev Pipeline Stage
 
+    // Compute Engine type
+    parameter RSZ_AVR_DIV_TYPE      = 1;    // 0: Using combinational divider || 1: Using multi-cycle divider
+
     typedef logic        [BLK_SUM_MAX_W-1:0]                                    BlkVal_t;       // Block value value type
     typedef BlkVal_t     [PXL_PRIM_COLOR_NUM-1:0]                               FcBlkVal_t;     // Full color block value
     typedef BlkVal_t     [RSZ_IMG_HEIGHT_SIZE-1:0]  [RSZ_IMG_WIDTH_SIZE-1:0]    BlkBuf_t;       // Block buffer type

@@ -4,8 +4,15 @@
 module ImgRsz_tb;
     import ImgRszPkg::*;
 
-    parameter DT_IMG_WIDTH  = 128;
-    parameter DT_IMG_HEIGHT = 64;
+    // Testbench configuration
+    localparam PXL_ST_I_STALL_MIN   = 0;
+    localparam PXL_ST_I_STALL_MAX   = 2;
+
+    localparam PXL_ST_O_STALL_MIN   = 0;
+    localparam PXL_ST_O_STALL_MAX   = 2;
+
+    localparam DT_IMG_WIDTH  = 128;
+    localparam DT_IMG_HEIGHT = 64;
     
     logic                                   Clk;
     logic                                   Reset;
@@ -53,6 +60,7 @@ module ImgRsz_tb;
     
     initial begin
         logic [PXL_PRIM_COLOR_W-1:0] PxlDataTemp [PXL_PRIM_COLOR_NUM-1:0];
+        int                          RandStall;
         #20;
         Cl;
         for (int y=0; y<DT_IMG_HEIGHT; y++) begin
@@ -61,6 +69,9 @@ module ImgRsz_tb;
                 PxlStDrv(.Data(PxlDataTemp), .X(x), .Y(y),
                 .Width(DT_IMG_WIDTH), .Height(DT_IMG_HEIGHT));
             end
+            // Random bubbles
+            RandStall =  $urandom_range(PXL_ST_I_STALL_MIN, PXL_ST_I_STALL_MAX);
+            repeat(RandStall) Cl;
         end
     end
     
@@ -68,11 +79,18 @@ module ImgRsz_tb;
         FcRszPxlData_t                          RszPxlDataTemp;
         logic        [RSZ_IMG_WIDTH_IDX_W-1:0]  RszPxlXTemp;
         logic        [RSZ_IMG_HEIGHT_IDX_W-1:0] RszPxlYTemp;
+        int                                     RandStall;
+        #20;
+        Cl;
         while (1'b1) begin
             RszPxlSamp( .SampRszPxlData (RszPxlDataTemp),
                         .SampRszPxlX    (RszPxlXTemp),
                         .SampRszPxlY    (RszPxlYTemp));
             $display("[INFO]: Resized Pixel     |   Data-%d  |    X-%d   |   Y-%d    |", RszPxlDataTemp[0], RszPxlXTemp, RszPxlYTemp);
+            
+            // Random bubbles
+            RandStall =  $urandom_range(PXL_ST_O_STALL_MIN, PXL_ST_O_STALL_MAX);
+            repeat(RandStall) Cl;
         end
         
     end

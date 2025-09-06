@@ -140,6 +140,7 @@ endgenerate
         if(Reset) begin
           PxlCntHor <= '0;
           PxlCntVer <= '0;
+          CapEntImg <= '0;
         end
         else begin
           if(PxlCap) begin
@@ -147,17 +148,17 @@ endgenerate
             if(PxlCntHor == (ProcImgWidth - 1'b1)) begin
               PxlCntHor <= '0;
               PxlCntVer <= PxlCntVer + 1'b1;
+              CapEntImg <= PxlCntVer == (ProcImgHeight - 1'b1); // Back-pressure when Last pixel is sent
             end
           end
           if(RszImgComp) begin
             PxlCntHor <= '0;
             PxlCntVer <= '0;
+            CapEntImg <= '0;
           end
         end
     end
     assign IsFstPxl     = (~|PxlCntHor & ~|PxlCntVer) & PxlCap; // (PxlCntHor == 0 and PxlCntVer == 0) and 1 pixel is captured
-    assign CapEntImg    = (PxlCntHor == (ProcImgWidth - 1'b1)) &
-                          (PxlCntVer == (ProcImgHeight - 1'b1));// Last pixel in a image is sent
     
 generate
     if(RSZ_PXL_FWD_SER == 1) begin : SerialFwdLogic

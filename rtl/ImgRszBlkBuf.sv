@@ -59,6 +59,7 @@ module ImgRszBlkBuf
     logic   [IMG_HEIGHT_IDX_W-1:0]      BlkBaseAddrVer  [RSZ_IMG_HEIGHT_SIZE-1:0]; // v*Y/V sequence        (v runs from 0 -> RSZ_IMG_HEIGHT_SIZE)
     logic   [IMG_HEIGHT_IDX_W-1:0]      BlkOffsetVer    [RSZ_IMG_HEIGHT_SIZE-1:0]; // v*Y/V + Y/V sequence  (v runs from 0 -> RSZ_IMG_HEIGHT_SIZE)
     logic   [RSZ_IMG_HEIGHT_SIZE-1:0]   PxlInBlkVer;    // Coming pixel is in block (vertically)
+    FcRszPxlBuf_t                       FcRszBuf;       // Value of all buffers after resizing 
     MulSeq #(   // Calculate multiplcation sequence u*X (with u from 0 -> RSZ_IMG_WIDTH_SIZE)
         .DATA_IN_W  (IMG_WIDTH_IDX_W),
         .SEQ_LEN    (RSZ_IMG_WIDTH_SIZE)
@@ -136,6 +137,8 @@ generate
                         end
                     end
                 end
+                // Extract meaningful value of buffers after resizing
+                assign FcRszBuf[c][y][x] = RszPxlData_t'(FcBlkBuf[c][y][x]);    // Extract 8 lower bits from Buffers
             end
         end
     end
@@ -163,12 +166,12 @@ generate
                             IntPxlCnt[y][x] <= IntPxlCnt[y][x];
                         end
                         default: begin
-                            IntPxlCnt[y][x] <= IntPxlCnt[y][x];
+                            IntPxlCnt[y][x] <= 'x;
                         end
                     endcase
                 end
             end
-            assign BlkIsEnough[y][x] = CompEngRdy & (IntPxlCnt[y][x] == (ProcBlkSz-1));
+            assign BlkIsEnough[y][x] = CompEngRdy & (IntPxlCnt[y][x] == ProcBlkSz);
             // "Block is executed" flag
             always_ff @(posedge Clk) begin
                 if(Reset) begin
@@ -212,7 +215,7 @@ generate
             .SEL_X_NUM  (RSZ_IMG_WIDTH_SIZE),
             .SEL_Y_NUM  (RSZ_IMG_HEIGHT_SIZE)
         ) FlushBlkSel (
-            .DataIn     (RszPxlBuf_t'(FcBlkBuf[c])), // Never overflow
+            .DataIn     (FcRszBuf[c]),
             .SelX       (FlushBlkXMsk),
             .SelY       (FlushBlkYMsk),
             .DataOut    (FlushRszPxlData[c])

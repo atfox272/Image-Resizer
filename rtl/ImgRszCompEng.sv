@@ -32,6 +32,9 @@ module ImgRszCompEng
        just accumulate in many cycles to calculate block size
        -> Use multi-cycle approach to calculate (BlkSzHor*BlkSzVer) with closer timing and less resource
     */      
+
+    genvar i;
+
     typedef enum { 
         IDLE,
         ACC,    // Accumulating
@@ -72,30 +75,64 @@ module ImgRszCompEng
     end
     assign CompEngRdy = CalcBlkSzSt == DONE;
 
+generate
     // Resized pixel computing
-    /* 
-    1st approach: Using divider of synthesis tool (only 1 cycle)
-        - This approach has only 1 latency
-        - However, it has very bad timing
-    */ 
-    assign CompBlkRdy = CompEngRdy; // Always ready when the block size is calculated
-    always_ff @(posedge Clk) begin
-        if(Reset) begin
-            CeCompVld <= '0;
-        end
-        else begin
-            for (int c = 0; c < PXL_PRIM_COLOR_NUM; c++) begin
-                CeRszPxlData[c] <= CompBlkData[c] / ProcBlkSz;    // FIXME: Potential critical path
+    if(RSZ_AVR_DIV_TYPE == 0) begin         : Gen_CombDiv
+        /* 
+        1st approach: Using divider of synthesis tool (only 1 cycle)
+            - This approach has only 1 latency
+            - However, it has very bad timing
+        */ 
+        assign CompBlkRdy = CompEngRdy; // Always ready when the block size is calculated
+        always_ff @(posedge Clk) begin
+            if(Reset) begin
+                CeCompVld <= '0;
             end
-            CeRszPxlXMsk <= CompBlkXMsk;
-            CeRszPxlYMsk <= CompBlkYMsk;
-            CeCompVld    <= CompBlkVld & CompBlkRdy;
+            else begin
+                for (int c = 0; c < PXL_PRIM_COLOR_NUM; c++) begin
+                    CeRszPxlData[c] <= CompBlkData[c] / ProcBlkSz;    // FIXME: Potential critical path
+                end
+                CeRszPxlXMsk <= CompBlkXMsk;
+                CeRszPxlYMsk <= CompBlkYMsk;
+                CeCompVld    <= CompBlkVld & CompBlkRdy;
+            end
+        end
+    end
+    else if(RSZ_AVR_DIV_TYPE == 1) begin    : Gen_MultiCycDiv
+        /*
+        2nd approach: Using multi-cycle divider 
+            - Best fit, because the latency of accumulated buffer is always high (>= 4 cycles), so the Compute Engine has many cycles to execute division
+            - Critical path of the multi-cycle divider is the Adder between 2 40-bit operands
+        */
+        for (i=0; i < PXL_PRIM_COLOR_NUM; i++) begin : Gen_ColDiv
+            ImgRszCegDiv #(
+                .NUMINATOR_W    (BLK_SUM_MAX_W),
+                .DENOMINATOR_W  (BLK_MAX_SZ_W),
+                .QUOTIENT_W     (PXL_PRIM_COLOR_W)
+            ) Div (
+                .Clk            (Clk),
+                .Rst            (Reset),
+                .Numinator      (CompBlkData[i]),
+                .Denominator    (ProcBlkSz),
+                .BwVld          (CompBlkVld),
+                .BwRdy          (CompBlkRdy),
+                .Quotient       (CeRszPxlData[i]),
+                .FwVld          (CeCompVld),
+                .FwRdy          (1'b1)
+            ); 
+        end
+        always_ff @(posedge Clk) begin
+            if(CompBlkVld & CompBlkRdy) begin
+                CeRszPxlXMsk <= CompBlkXMsk;
+                CeRszPxlYMsk <= CompBlkYMsk;
+            end
         end
     end
     /*
-    2nd approach: Using lookup table, which can be pipelined
+    3rd approach: Using lookup table, which can be pipelined
         - Flexible in timing (can balance between latency and timing by adding pipeline stages)
         - However, it consumes a lot of resouces
     TODO:
     */
+endgenerate
 endmodule
