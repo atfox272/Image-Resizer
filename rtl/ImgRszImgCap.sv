@@ -170,18 +170,18 @@ generate
             end
             else if(FwdRszEn) begin
                 PopPxlCntHor <= PopPxlCntHor + 1'b1;
-                if(PopPxlCntHor == (ProcImgWidth - 1'b1)) begin
+                if(PopPxlCntHor == (RSZ_IMG_WIDTH_SIZE - 1'b1)) begin
                     PopPxlCntHor <= '0;
                     PopPxlCntVer <= PopPxlCntVer + 1'b1;
-                    if(PopPxlCntVer == (ProcImgHeight - 1'b1)) begin
+                    if(PopPxlCntVer == (RSZ_IMG_HEIGHT_SIZE - 1'b1)) begin
                         PopPxlCntVer <= '0;
                     end
                 end
             end
         end
         assign RszImgComp = FwdRszEn &
-                            (PopPxlCntHor == (ProcImgWidth - 1'b1)) &
-                            (PopPxlCntVer == (ProcImgHeight - 1'b1)); // Last resized pixel is sent
+                            (PopPxlCntHor == (RSZ_IMG_WIDTH_SIZE - 1'b1)) &
+                            (PopPxlCntVer == (RSZ_IMG_HEIGHT_SIZE - 1'b1)); // Last resized pixel is sent
     end
     else if(RSZ_PXL_FWD_SER == 0) begin : ParallelFwdLogic
         assign RszImgComp = FwdRszEn; // Entire image is forwarded        

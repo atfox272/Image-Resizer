@@ -73,6 +73,20 @@ module ImgRsz_tb;
             RandStall =  $urandom_range(PXL_ST_I_STALL_MIN, PXL_ST_I_STALL_MAX);
             repeat(RandStall) Cl;
         end
+
+        
+        #20;
+        Cl;
+        for (int y=0; y<DT_IMG_HEIGHT; y++) begin
+            for (int x=0; x<DT_IMG_WIDTH; x++) begin
+                PxlDataTemp[0] = x;
+                PxlStDrv(.Data(PxlDataTemp), .X(x), .Y(y),
+                .Width(DT_IMG_WIDTH), .Height(DT_IMG_HEIGHT));
+            end
+            // Random bubbles
+            RandStall =  $urandom_range(PXL_ST_I_STALL_MIN, PXL_ST_I_STALL_MAX);
+            repeat(RandStall) Cl;
+        end
     end
     
     initial begin
