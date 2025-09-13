@@ -1,0 +1,17 @@
+./../rtl/ImgRszPkg.sv
+./../rtl/ImgRsz.sv
+./../rtl/ImgRszBlkBuf.sv
+./../rtl/ImgRszBlkCompSer.sv
+./../rtl/ImgRszCompEng.sv
+./../rtl/ImgRszFwd.sv
+./../rtl/ImgRszImgCap.sv
+./../rtl/ImgRszCegDiv.sv
+./../rtl/common/fifo/sync_fifo/sync_fifo.v
+./../rtl/common/skid_buffer/skid_buffer.v
+./../rtl/common/skid_buffer/sb_fifo.v
+./../rtl/common/onehot_mux/OnehotMux.sv
+./../rtl/common/onehot_mux/OnehotMux2D.sv
+./../rtl/common/find_first/FindFirstSet.sv
+./../rtl/common/find_first/FindFirstSet2D.sv
+./../rtl/common/mul_seq/MulSeq.sv
+./../rtl/common/encoder/onehot_encoder/onehot_encoder.v

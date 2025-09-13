@@ -1,0 +1,1 @@
+./../tb/ImgRsz_tb.sv
