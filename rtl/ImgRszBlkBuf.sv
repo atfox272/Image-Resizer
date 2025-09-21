@@ -1,38 +1,55 @@
-module ImgRszBlkBuf 
-    import ImgRszPkg::*;
-    (
-    input   logic                                   Clk,
-    input   logic                                   Reset,
+module ImgRszBlkBuf #(
+    // Original Image configuration
+    parameter IMG_WIDTH_IDX_W       = 10,
+    parameter IMG_HEIGHT_IDX_W      = 10,
+    // Resized Image configuration
+    parameter RSZ_ALGORITHM         = "AVR-POOLING",    // Resizing Type: "AVR-POOLING" || "MAX-POOLING"
+    parameter RSZ_IMG_WIDTH_SIZE    = 8,
+    parameter RSZ_IMG_HEIGHT_SIZE   = 8,
+    parameter RSZ_IMG_WIDTH_IDX_W   = $clog2(RSZ_IMG_WIDTH_SIZE),
+    parameter RSZ_IMG_HEIGHT_IDX_W  = $clog2(RSZ_IMG_HEIGHT_SIZE),
+    // Pixel configuration
+    parameter PXL_PRIM_COLOR_NUM    = 1,    // Number of primary colors in 1 pixel  (Ex: RGB-3, YCbCr-3)
+    parameter PXL_PRIM_COLOR_W      = 8,    // Width of each primary color element  (Ex: R-8,   Cb-8)
+    // Resizing Block 
+    parameter BLK_MAX_SZ_W          = 0,  // Maximum block size
+    parameter BLK_SUM_MAX_W         = 0,  // From Prev Pipeline Stage
+    // Local data type
+    parameter type FC_RSZ_PXL_TYPE  = logic, // FcRszPxlData_t
+    parameter type FC_BLK_VAL_TYPE  = logic,
+    parameter type FC_BLK_BUF_TYPE  = logic 
+) (
+    input   logic                                       Clk,
+    input   logic                                       Reset,
     // Pipelined (Delay) Pixel
-    input   FcRszPxlData_t                          PxlData_d1,
-    input   logic       [IMG_WIDTH_IDX_W-1:0]       PxlX_d1,        
-    input   logic       [IMG_HEIGHT_IDX_W-1:0]      PxlY_d1,
-    input   logic                                   PxlVld_d1,
-    output  logic                                   PxlRdy_d1,
+    input   FC_RSZ_PXL_TYPE                             PxlData_d1,
+    input   logic           [IMG_WIDTH_IDX_W-1:0]       PxlX_d1,        
+    input   logic           [IMG_HEIGHT_IDX_W-1:0]      PxlY_d1,
+    input   logic                                       PxlVld_d1,
+    output  logic                                       PxlRdy_d1,
     // Processed Image information
-    input   logic       [IMG_WIDTH_IDX_W-1:0]       ProcImgWidth,   // Processed Image's width
-    input   logic       [IMG_HEIGHT_IDX_W-1:0]      ProcImgHeight,  // Processed Image's height
+    input   logic           [IMG_WIDTH_IDX_W-1:0]       ProcImgWidth,   // Processed Image's width
+    input   logic           [IMG_HEIGHT_IDX_W-1:0]      ProcImgHeight,  // Processed Image's height
     // Block Compute Serialization 
-    output  logic       [RSZ_IMG_WIDTH_SIZE-1:0]    BlkIsEnough     [RSZ_IMG_HEIGHT_SIZE-1:0],  // The block collected all corresponding pixels
-    output  FcBlkVal_t                              CompBlkData,    // Computed Block data
-    input   logic       [RSZ_IMG_WIDTH_SIZE-1:0]    CompBlkXMsk,    // Used to flush the block counter (X position of the interest block)
-    input   logic       [RSZ_IMG_HEIGHT_SIZE-1:0]   CompBlkYMsk,    // Used to flush the block counter (Y position of the interest block)
-    input   logic                                   CompBlkEn,      // Compute a block
+    output  logic           [RSZ_IMG_WIDTH_SIZE-1:0]    BlkIsEnough     [RSZ_IMG_HEIGHT_SIZE-1:0],  // The block collected all corresponding pixels
+    output  FC_BLK_VAL_TYPE                             CompBlkData,    // Computed Block data
+    input   logic           [RSZ_IMG_WIDTH_SIZE-1:0]    CompBlkXMsk,    // Used to flush the block counter (X position of the interest block)
+    input   logic           [RSZ_IMG_HEIGHT_SIZE-1:0]   CompBlkYMsk,    // Used to flush the block counter (Y position of the interest block)
+    input   logic                                       CompBlkEn,      // Compute a block
     // Resizing Compute Engine (CE)
-    input   logic       [BLK_MAX_SZ_W-1:0]          ProcBlkSz,      // Processed Block size
-    input   logic                                   CompEngRdy,     // Compute Engine is ready (BlkSz is valid now)
-    input   FcRszPxlData_t                          CeRszPxlData,   // Resized pixel data from Compute Engine
-    input   logic       [RSZ_IMG_WIDTH_SIZE-1:0]    CeRszPxlXMsk,   
-    input   logic       [RSZ_IMG_HEIGHT_SIZE-1:0]   CeRszPxlYMsk,
-    input   logic                                   CeCompVld,      // The Payload of Compute Engine is valid
+    input   logic           [BLK_MAX_SZ_W-1:0]          ProcBlkSz,      // Processed Block size
+    input   logic                                       CompEngRdy,     // Compute Engine is ready (BlkSz is valid now)
+    input   FC_RSZ_PXL_TYPE                             CeRszPxlData,   // Resized pixel data from Compute Engine
+    input   logic           [RSZ_IMG_WIDTH_SIZE-1:0]    CeRszPxlXMsk,   
+    input   logic           [RSZ_IMG_HEIGHT_SIZE-1:0]   CeRszPxlYMsk,
+    input   logic                                       CeCompVld,      // The Payload of Compute Engine is valid
     // Resized Pixel Forwarder
-    output  logic       [RSZ_IMG_WIDTH_SIZE-1:0]    BlkIsExec       [RSZ_IMG_HEIGHT_SIZE-1:0], // Block is executed by Compute Engine 
-    output  FcRszPxlData_t                          FlushRszPxlData,// Flushed Resized Pixel data
-    input   logic       [RSZ_IMG_WIDTH_SIZE-1:0]    FlushBlkXMsk,   // Used to flush the block executed flag (X position of the interest block)
-    input   logic       [RSZ_IMG_HEIGHT_SIZE-1:0]   FlushBlkYMsk,   // Used to flush the block executed flag (Y position of the interest block)
-    input   logic                                   FlushVld,
+    output  logic           [RSZ_IMG_WIDTH_SIZE-1:0]    BlkIsExec       [RSZ_IMG_HEIGHT_SIZE-1:0], // Block is executed by Compute Engine 
+    input   logic           [RSZ_IMG_WIDTH_SIZE-1:0]    FlushBlkXMsk,   // Used to flush the block executed flag (X position of the interest block)
+    input   logic           [RSZ_IMG_HEIGHT_SIZE-1:0]   FlushBlkYMsk,   // Used to flush the block executed flag (Y position of the interest block)
+    input   logic                                       FlushVld,
     // Common use
-    output  FcBlkBuf_t                              FcBlkBuf    // Full Color Block accumulated value
+    output  FC_BLK_BUF_TYPE                             FcBlkBuf    // Full Color Block accumulated value
     );
     genvar c, x, y;
 
@@ -59,7 +76,7 @@ module ImgRszBlkBuf
     logic   [IMG_HEIGHT_IDX_W-1:0]      BlkBaseAddrVer  [RSZ_IMG_HEIGHT_SIZE-1:0]; // v*Y/V sequence        (v runs from 0 -> RSZ_IMG_HEIGHT_SIZE)
     logic   [IMG_HEIGHT_IDX_W-1:0]      BlkOffsetVer    [RSZ_IMG_HEIGHT_SIZE-1:0]; // v*Y/V + Y/V sequence  (v runs from 0 -> RSZ_IMG_HEIGHT_SIZE)
     logic   [RSZ_IMG_HEIGHT_SIZE-1:0]   PxlInBlkVer;    // Coming pixel is in block (vertically)
-    FcRszPxlBuf_t                       FcRszBuf;       // Value of all buffers after resizing 
+    FC_BLK_BUF_TYPE                     FcRszBuf;       // Value of all buffers after resizing 
     MulSeq #(   // Calculate multiplcation sequence u*X (with u from 0 -> RSZ_IMG_WIDTH_SIZE)
         .DATA_IN_W  (IMG_WIDTH_IDX_W),
         .SEQ_LEN    (RSZ_IMG_WIDTH_SIZE)
@@ -138,7 +155,7 @@ generate
                     end
                 end
                 // Extract meaningful value of buffers after resizing
-                assign FcRszBuf[c][y][x] = RszPxlData_t'(FcBlkBuf[c][y][x]);    // Extract 8 lower bits from Buffers
+                assign FcRszBuf[c][y][x] = (PXL_PRIM_COLOR_W)'(FcBlkBuf[c][y][x]);  // Extract 8 lower bits from Buffers
             end
         end
     end
@@ -200,7 +217,7 @@ generate
     for (c = 0; c < PXL_PRIM_COLOR_NUM; c++) begin  : Gen_ColorCompMap
         // Map a corresponding buffer to Compute Engine
         OnehotMux2D #(
-            .DATA_TYPE  (BlkVal_t),
+            .DATA_TYPE  (FC_BLK_VAL_TYPE),
             .SEL_X_NUM  (RSZ_IMG_WIDTH_SIZE),
             .SEL_Y_NUM  (RSZ_IMG_HEIGHT_SIZE)
         ) CompBlkSel (
@@ -208,17 +225,6 @@ generate
             .SelX       (CompBlkXMsk),
             .SelY       (CompBlkYMsk),
             .DataOut    (CompBlkData[c])
-        );
-        // Map a corresponding buffer to Serializer
-        OnehotMux2D #(
-            .DATA_TYPE  (RszPxlData_t),
-            .SEL_X_NUM  (RSZ_IMG_WIDTH_SIZE),
-            .SEL_Y_NUM  (RSZ_IMG_HEIGHT_SIZE)
-        ) FlushBlkSel (
-            .DataIn     (FcRszBuf[c]),
-            .SelX       (FlushBlkXMsk),
-            .SelY       (FlushBlkYMsk),
-            .DataOut    (FlushRszPxlData[c])
         );
     end
     

@@ -1,6 +1,10 @@
-module ImgRszBlkCompSer 
-    import ImgRszPkg::*;
-    (
+module ImgRszBlkCompSer #(
+    // Resized Image configuration
+    parameter RSZ_IMG_WIDTH_SIZE    = 8,
+    parameter RSZ_IMG_HEIGHT_SIZE   = 8,
+    parameter RSZ_IMG_WIDTH_IDX_W   = $clog2(RSZ_IMG_WIDTH_SIZE),
+    parameter RSZ_IMG_HEIGHT_IDX_W  = $clog2(RSZ_IMG_HEIGHT_SIZE)
+) (
     input   logic                               Clk,
     input   logic                               Reset,
     // Particular Block Buffer

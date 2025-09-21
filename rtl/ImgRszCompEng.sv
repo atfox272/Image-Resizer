@@ -1,28 +1,44 @@
-module ImgRszCompEng 
-    import ImgRszPkg::*;
-    (
-    input   logic                               Clk,
-    input   logic                               Reset,
+module ImgRszCompEng #(
+    // Resized Image configuration
+    parameter RSZ_ALGORITHM         = "AVR-POOLING",    // Resizing Type: "AVR-POOLING" || "MAX-POOLING"
+    parameter RSZ_IMG_WIDTH_SIZE    = 8,
+    parameter RSZ_IMG_HEIGHT_SIZE   = 8,
+    // Pixel configuration
+    parameter PXL_PRIM_COLOR_NUM    = 1,    // Number of primary colors in 1 pixel  (Ex: RGB-3, YCbCr-3)
+    parameter PXL_PRIM_COLOR_W      = 8,    // Width of each primary color element  (Ex: R-8,   Cb-8)
+    // Compute Engine type
+    parameter RSZ_AVR_DIV_TYPE      = 1,    // Used for frequence target - 0: Using combinational divider || 1: Using multi-cycle divider
+    // Resizing Block
+    parameter BLK_WIDTH_MAX_SZ_W   = 1, // Width of value that is equal to (ImgWidth / RszImgWidth)
+    parameter BLK_HEIGHT_MAX_SZ_W  = 1, // Width of value that is equal to (ImgHeight / RszImgWidth)
+    parameter BLK_MAX_SZ_W         = 1, // Maximum block size
+    parameter BLK_SUM_MAX_W        = 1, // From Prev Pipeline Stage
+    // Local data type
+    parameter type FC_RSZ_PXL_TYPE  = logic, // FcRszPxlData_t
+    parameter type FC_BLK_VAL_TYPE  = logic 
+) (
+    input   logic                                       Clk,
+    input   logic                                       Reset,
     // Image Capture
-    input   logic                               IsFstPxl,       // The current pixel is the first
-    input   logic                               PxlCap,         // Pixel is captured
-    input   logic   [BLK_WIDTH_MAX_SZ_W-1:0]    BlkSzHor,       // Horizontal Block Size
-    input   logic   [BLK_HEIGHT_MAX_SZ_W-1:0]   BlkSzVer,       // Vertical Block Size
+    input   logic                                       IsFstPxl,       // The current pixel is the first
+    input   logic                                       PxlCap,         // Pixel is captured
+    input   logic           [BLK_WIDTH_MAX_SZ_W-1:0]    BlkSzHor,       // Horizontal Block Size
+    input   logic           [BLK_HEIGHT_MAX_SZ_W-1:0]   BlkSzVer,       // Vertical Block Size
     // Prev pipeline stage: Gather the pixels
-    input   FcBlkVal_t                          CompBlkData,    // Computed Block data
-    input   logic   [RSZ_IMG_WIDTH_SIZE-1:0]    CompBlkXMsk,    // Used to flush the block counter (X position of the interest block)
-    input   logic   [RSZ_IMG_HEIGHT_SIZE-1:0]   CompBlkYMsk,    // Used to flush the block counter (Y position of the interest block)
-    input   logic                               CompBlkVld,     // Request to compute a block
-    output  logic                               CompBlkRdy,     // Computing Block is ready
+    input   FC_BLK_VAL_TYPE                             CompBlkData,    // Computed Block data
+    input   logic           [RSZ_IMG_WIDTH_SIZE-1:0]    CompBlkXMsk,    // Used to flush the block counter (X position of the interest block)
+    input   logic           [RSZ_IMG_HEIGHT_SIZE-1:0]   CompBlkYMsk,    // Used to flush the block counter (Y position of the interest block)
+    input   logic                                       CompBlkVld,     // Request to compute a block
+    output  logic                                       CompBlkRdy,     // Computing Block is ready
     // Next pipeline stage: Buffer resized pixel
-    output  FcRszPxlData_t                      CeRszPxlData,   // Resized pixel data from Compute Engine
-    output  logic   [RSZ_IMG_WIDTH_SIZE-1:0]    CeRszPxlXMsk,   
-    output  logic   [RSZ_IMG_HEIGHT_SIZE-1:0]   CeRszPxlYMsk,
-    output  logic                               CeCompVld,      // The Payload of Compute Engine is valid
+    output  FC_RSZ_PXL_TYPE                             CeRszPxlData,   // Resized pixel data from Compute Engine
+    output  logic           [RSZ_IMG_WIDTH_SIZE-1:0]    CeRszPxlXMsk,   
+    output  logic           [RSZ_IMG_HEIGHT_SIZE-1:0]   CeRszPxlYMsk,
+    output  logic                                       CeCompVld,      // The Payload of Compute Engine is valid
     // Common 
-    output  logic   [BLK_MAX_SZ_W-1:0]          ProcBlkSz,      // Processed Block size
-    output  logic                               CompEngRdy,     // Compute Engine is ready (BlkSz is valid now)
-    input   logic                               RszImgComp      // Resizing image is completed
+    output  logic           [BLK_MAX_SZ_W-1:0]          ProcBlkSz,      // Processed Block size
+    output  logic                                       CompEngRdy,     // Compute Engine is ready (BlkSz is valid now)
+    input   logic                                       RszImgComp      // Resizing image is completed
     );
 
     // Block Size computing
@@ -70,7 +86,7 @@ module ImgRszCompEng
                 default: begin
                     ProcBlkSz   <= 'x;
                     AccTime     <= 'x;
-                    CalcBlkSzSt <= 'x;
+                    CalcBlkSzSt <= IDLE;
                 end
             endcase
         end
